@@ -149,19 +149,21 @@ import numpy as np
 
 depenses = data[data['montant'] < 0]
 dep = -depenses['montant'].values
+n = len(dep)
 lorenz = np.cumsum(np.sort(dep)) / dep.sum()
 lorenz = np.append([0],lorenz) # La courbe de Lorenz commence à 0
 
 plt.axes().axis('equal')
-plt.plot(np.linspace(0,1,len(lorenz)),lorenz,drawstyle='steps-post')
+xaxis = np.linspace(0-1/n,1+1/n,n+1) #Il y a un segment de taille n pour chaque individu, plus 1 segment supplémentaire d'ordonnée 0. Le premier segment commence à 0-1/n, et le dernier termine à 1+1/n.
+plt.plot(xaxis,lorenz,drawstyle='steps-post')
 plt.show()
 
 
 # In[17]:
 
 
-aire_ss_courbe = lorenz[:-1].sum()/len(lorenz) # aire sous la courbe de Lorenz. La dernière valeur ne participe pas à l'aire, d'où "[:-1]"
-S = 0.5 - aire_ss_courbe # aire entre la 1e bissectrice et la courbe de Lorenz
+AUC = (lorenz.sum() -lorenz[-1]/2 -lorenz[0]/2)/n # Surface sous la courbe de Lorenz. Le premier segment (lorenz[0]) est à moitié en dessous de 0, on le coupe donc en 2, on fait de même pour le dernier segment lorenz[-1] qui est à moitié au dessus de 1.
+S = 0.5 - AUC # surface entre la première bissectrice et le courbe de Lorenz
 gini = 2*S
 gini
 
