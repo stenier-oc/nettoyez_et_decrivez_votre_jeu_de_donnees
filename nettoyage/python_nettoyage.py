@@ -1,39 +1,43 @@
-
+#!/usr/bin/env python
 # coding: utf-8
 
 # In[1]:
 
+
+import pandas as pd # On importe la librairie Pandas, que l'on surnomme 'pd'
+
+def lower_case(value): 
+    print('Voici la valeur que je traite:', value)
+    return value.lower()
+
+data = pd.DataFrame([['A',1],
+                     ['B',2],
+                     ['C',3]], columns = ['lettre','position'])
+
+nouvelle_colonne = data['lettre'].apply(lower_case)
+nouvelle_colonne = nouvelle_colonne.values
+print(nouvelle_colonne)
+data['lettre'] = nouvelle_colonne
+print(data)
+
+
+# In[2]:
+
+
+# import des librairies dont nous aurons besoin
 import pandas as pd
 import numpy as np
 import re
 
-
-# In[13]:
-
+# chargement et affichage des données
 data = pd.read_csv('personnes.csv')
 print(data)
 
 
 # In[3]:
 
-def lower_case(value): 
-    print('Voici la valeur que je traite:', value)
-    return value.lower()
-
-data['prenom_min'] = data['prenom'].apply(lower_case)
-
-
-# In[4]:
-
-del data['prenom_min']
-
-
-# In[5]:
 
 VALID_COUNTRIES = ['France', "Côte d'ivoire", 'Madagascar', 'Bénin', 'Allemagne', 'USA']
-
-
-# In[6]:
 
 def check_country(country):
     if country not in VALID_COUNTRIES:
@@ -42,7 +46,8 @@ def check_country(country):
     return country
 
 
-# In[7]:
+# In[4]:
+
 
 def first(string):
     parts = string.split(',')
@@ -52,7 +57,8 @@ def first(string):
     return first_part
 
 
-# In[8]:
+# In[5]:
+
 
 def convert_height(height):
     found = re.search('\d\.\d{2}m', height)
@@ -70,7 +76,8 @@ def fill_height(height, replacement):
     return height
 
 
-# In[9]:
+# In[6]:
+
 
 data['email'] = data['email'].apply(first)
 data['pays'] = data['pays'].apply(check_country)
@@ -79,17 +86,14 @@ data['taille'] = [t if t<3 else np.NaN for t in data['taille']]
 
 mean_height = data['taille'].mean()
 data['taille'] = [fill_height(t, mean_height) for t in data['taille']]
-
 data['date_naissance'] = pd.to_datetime(data['date_naissance'],format='%d/%m/%Y', 
                                         errors='coerce')
 
+print(data)
 
-# In[10]:
+
+# In[7]:
+
 
 data
-
-
-# In[ ]:
-
-
 

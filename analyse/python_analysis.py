@@ -1,7 +1,8 @@
-
+#!/usr/bin/env python
 # coding: utf-8
 
-# In[3]:
+# In[1]:
+
 
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -12,19 +13,22 @@ data = pd.read_csv("operations_enrichies.csv", parse_dates=[0])
 
 # # Représenter une variable sous forme de graphique
 
-# In[4]:
+# In[2]:
+
 
 data['categ'].value_counts(normalize=True).plot(kind='bar')
 plt.show()
 
 
-# In[5]:
+# In[3]:
 
-data[data.montant.abs() < 100]["montant"].hist(normed=True,bins=20)
+
+data[data.montant.abs() < 100]["montant"].hist(density=True,bins=20)
 plt.show()
 
 
-# In[6]:
+# In[4]:
+
 
 # VARIABLE QUALITATIVE
 # Diagramme en secteurs
@@ -43,52 +47,60 @@ data["quart_mois"].value_counts(normalize=True).plot(kind='bar',width=0.1)
 plt.show()
 
 # Histogramme
-data["montant"].hist(normed=True)
+data["montant"].hist(density=True)
 plt.show()
 # Histogramme plus beau
-data[data.montant.abs() < 100]["montant"].hist(normed=True,bins=20)
+data[data.montant.abs() < 100]["montant"].hist(density=True,bins=20)
 plt.show()
 
 
 # # Représenter une variable sous forme de tableau
 
-# In[7]:
+# In[5]:
+
 
 effectifs = data["quart_mois"].value_counts()
 modalites = effectifs.index
 
 
-# In[8]:
+# In[6]:
+
 
 tab = pd.DataFrame(modalites, columns = ["quart_mois"])
 
 
+# In[7]:
+
+
+tab
+
+
+# In[8]:
+
+
+tab["n"] = effectifs.values
+
+
 # In[9]:
+
 
 tab
 
 
 # In[10]:
 
-tab["n"] = effectifs.values
+
+tab["f"] = tab["n"] / len(data)
 
 
 # In[11]:
+
 
 tab
 
 
 # In[12]:
 
-tab["f"] = tab["n"] / len(data)
-
-
-# In[13]:
-
-tab
-
-
-# In[14]:
 
 tab = tab.sort_values("quart_mois")
 tab["F"] = tab["f"].cumsum()
@@ -97,17 +109,20 @@ tab
 
 # # Mesures de tendance centrale, de dispersion et de forme
 
-# In[15]:
+# In[13]:
+
 
 data['montant'].mean()
 
 
-# In[16]:
+# In[14]:
+
 
 data['montant'].median()
 
 
-# In[17]:
+# In[15]:
+
 
 for cat in data["categ"].unique():
     sous_echantillon = data[data.categ == cat]
@@ -127,7 +142,8 @@ for cat in data["categ"].unique():
 
 # # Mesures de concentration
 
-# In[18]:
+# In[16]:
+
 
 import numpy as np
 
@@ -136,11 +152,13 @@ dep = -depenses['montant'].values
 lorenz = np.cumsum(np.sort(dep)) / dep.sum()
 lorenz = np.append([0],lorenz) # La courbe de Lorenz commence à 0
 
+plt.axes().axis('equal')
 plt.plot(np.linspace(0,1,len(lorenz)),lorenz,drawstyle='steps-post')
 plt.show()
 
 
-# In[19]:
+# In[17]:
+
 
 aire_ss_courbe = lorenz[:-1].sum()/len(lorenz) # aire sous la courbe de Lorenz. La dernière valeur ne participe pas à l'aire, d'où "[:-1]"
 S = 0.5 - aire_ss_courbe # aire entre la 1e bissectrice et la courbe de Lorenz
@@ -150,12 +168,14 @@ gini
 
 # # Analyse bivariée : 2 variables quanti
 
-# In[20]:
+# In[18]:
+
 
 import numpy as np
 
 
-# In[21]:
+# In[19]:
+
 
 depenses = data[data.montant < 0]
 plt.plot(depenses["solde_avt_ope"],-depenses["montant"],'o',alpha=0.5)
@@ -164,7 +184,18 @@ plt.ylabel("montant de dépense")
 plt.show()
 
 
-# In[22]:
+# In[20]:
+
+
+import scipy.stats as st
+import numpy as np
+
+print(st.pearsonr(depenses["solde_avt_ope"],-depenses["montant"])[0])
+print(np.cov(depenses["solde_avt_ope"],-depenses["montant"],ddof=0)[1,0])
+
+
+# In[21]:
+
 
 taille_classe = 500 # taille des classes pour la discrétisation
 
@@ -205,27 +236,12 @@ for n_quartile in range(3):
 plt.show()
 
 
-# In[23]:
-
-import scipy.stats as st
-import numpy as np
-
-
-# In[24]:
-
-st.pearsonr(depenses["solde_avt_ope"],-depenses["montant"])[0]
-
-
-# In[25]:
-
-np.cov(depenses["solde_avt_ope"],-depenses["montant"],ddof=0)[1,0]
-
-
 # ## Régression linéaire
 
 # ### Calcul de la variable *attente*
 
-# In[26]:
+# In[22]:
+
 
 import datetime as dt
 
@@ -255,11 +271,13 @@ courses = courses.iloc[1:,]
 # (courses réalisées le même jour mais dans 2 magasins différents)
 a = courses.groupby("date_operation")["montant"].sum()
 b = courses.groupby("date_operation")["attente"].first()
-courses = pd.DataFrame([a for a in zip(a,b)])
-courses.columns = ["montant","attente"]
+courses = pd.DataFrame({"montant":a, "attente":b})
+
+courses
 
 
-# In[27]:
+# In[23]:
+
 
 plt.plot(courses.attente,courses.montant, "o")
 plt.xlabel("attente")
@@ -269,7 +287,8 @@ plt.show()
 
 # ### Régression linéaire
 
-# In[28]:
+# In[24]:
+
 
 import statsmodels.api as sm
 
@@ -283,7 +302,8 @@ a,b = result.params['attente'],result.params['intercept']
 result.params
 
 
-# In[29]:
+# In[25]:
+
 
 plt.plot(courses.attente,courses.montant, "o")
 plt.plot(np.arange(15),[a*x+b for x in np.arange(15)])
@@ -294,12 +314,14 @@ plt.show()
 
 # ### Régression linéaire sans outliers
 
-# In[30]:
+# In[26]:
+
 
 courses = courses[courses.attente < 15]
 
 
-# In[31]:
+# In[27]:
+
 
 Y = courses['montant']
 X = courses[['attente']]
@@ -319,7 +341,8 @@ plt.show()
 
 # # Analyse bivariée : 1 variable quanti et 1 quali
 
-# In[32]:
+# In[28]:
+
 
 X = "categ" # qualitative
 Y = "montant" # quantitative
@@ -332,13 +355,15 @@ sous_echantillon["montant"] = -sous_echantillon["montant"]
 sous_echantillon = sous_echantillon[sous_echantillon["categ"] != "LOYER"] 
 
 
-# In[33]:
+# In[29]:
+
 
 # Changement de la palette graphique
 sns.set_palette(sns.color_palette("colorblind", 3))
 
 
-# In[34]:
+# In[30]:
+
 
 modalites = sous_echantillon[X].unique()
 groupes = []
@@ -356,7 +381,8 @@ plt.show()
 
 # ## ANOVA
 
-# In[35]:
+# In[31]:
+
 
 X = "categ" # qualitative
 Y = "montant" # quantitative
@@ -378,42 +404,30 @@ def eta_squared(x,y):
 eta_squared(sous_echantillon[X],sous_echantillon[Y])
 
 
-# # Analyse bivariée : 1 variable quanti et 1 quali
+# # Analyse bivariée : 2 variables quantitatives
 
-# In[36]:
+# In[32]:
+
 
 X = "quart_mois"
 Y = "categ"
 
-c = data[[X,Y]].pivot_table(index=X,columns=Y,aggfunc=len)
-cont = c.copy()
-
-tx = data[X].value_counts()
-ty = data[Y].value_counts()
-
-cont.loc[:,"Total"] = tx
-cont.loc["total",:] = ty
-cont.loc["total","Total"] = len(data)
+cont = data[[X,Y]].pivot_table(index=X,columns=Y,aggfunc=len,margins=True,margins_name="Total")
 cont
 
 
-# In[37]:
+# In[33]:
 
-tx = pd.DataFrame(tx)
-ty = pd.DataFrame(ty)
-tx.columns = ["foo"]
-ty.columns = ["foo"]
+
+tx = cont.loc[:,["Total"]]
+ty = cont.loc[["Total"],:]
 n = len(data)
-indep = tx.dot(ty.T) / n
+indep = tx.dot(ty) / n
 
-c = c.fillna(0) # on remplace les valeurs nulles par des 0
+c = cont.fillna(0) # on remplace les valeurs nulles par des 0
 mesure = (c-indep)**2/indep
 xi_n = mesure.sum().sum()
-sns.heatmap(mesure/xi_n,annot=c)
+table = mesure/xi_n
+sns.heatmap(table.iloc[:-1,:-1],annot=c.iloc[:-1,:-1])
 plt.show()
-
-
-# In[ ]:
-
-
 

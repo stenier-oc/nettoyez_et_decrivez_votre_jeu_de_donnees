@@ -1,23 +1,28 @@
-
+#!/usr/bin/env python
 # coding: utf-8
 
-# In[76]:
+# In[1]:
+
 
 import pandas as pd
+import numpy as np
 
 
-# In[77]:
+# In[2]:
+
 
 data = pd.read_csv("operations.csv", parse_dates=[1,2])
 
 
-# In[78]:
+# In[3]:
+
 
 data.columns = ['identifiant_transaction','date_operation','date_valeur',
                 'libelle','debit','credit','solde']
 
 
-# In[79]:
+# In[4]:
+
 
 from collections import Counter
 
@@ -32,7 +37,8 @@ def most_common_words(labels):
 most_common_words(data['libelle'].values)
 
 
-# In[80]:
+# In[5]:
+
 
 CATEGS = {
     'LOYER': 'LOYER',
@@ -58,14 +64,16 @@ TYPES = {
 }
 
 
-# In[81]:
+# In[6]:
+
 
 LAST_BALANCE = 2400 # Solde du compte APRES la dernière opération en date
 EXPENSES = [80,200] # Bornes des catégories de dépense : petite, moyenne et grosse
 WEEKEND = ["Saturday","Sunday"] # Jours non travaillés
 
 
-# In[82]:
+# In[7]:
+
 
 # Controle des colonnes
 for c in ['date_operation','libelle','debit','credit']:
@@ -75,10 +83,21 @@ for c in ['date_operation','libelle','debit','credit']:
             msg += "et minuscules dans le nom des colonnes!"
             raise Exception(msg.format(c))
 
+if not np.issubdtype(data['date_operation'].dtype, np.datetime64):
+    raise Exception("Attention, la colonne date_operation de votre dataframe n\'est actuellement pas reconnue comme une date. Relisez bien le cours en faisant notamment attention aux arguments dayfirst et parse_dates transmis à la fonction pd.read_csv")
+if not np.issubdtype(data['debit'].dtype, np.number):
+    raise Exception("Attention, la colonne debit de votre dataframe n\'est actuellement pas reconnue comme une colonne numérique. Relisez bien le cours en faisant notamment attention à l'argument 'decimal' transmis à la fonction pd.read_csv. Vérifiez également dans votre fichier CSV que cette colonne ne contient bien QUE des valeurs numériques (aucune lettre ni autre caractère, etc.)")
+if not np.issubdtype(data['credit'].dtype, np.number):
+    raise Exception("Attention, la colonne credit de votre dataframe n\'est actuellement pas reconnue comme une colonne numérique. Relisez bien le cours en faisant notamment attention à l'argument 'decimal' transmis à la fonction pd.read_csv. Vérifiez également dans votre fichier CSV que cette colonne ne contient bien QUE des valeurs numériques (aucune lettre ni autre caractère, etc.)")            
+            
 # Suppression des colonnes innutiles
 for c in data.columns:
     if c not in ['date_operation','libelle','debit','credit','montant']:
         del data[c]
+
+
+# In[8]:
+
 
 # Ajout de la colonne 'montant' si besoin
 if 'montant' not in data.columns:
@@ -86,14 +105,22 @@ if 'montant' not in data.columns:
     data["credit"] = data["credit"].fillna(0)
     data["montant"] = data["debit"] + data["credit"]
     del data["credit"], data["debit"]
+else:
+    if not np.issubdtype(data['credit'].dtype, np.number):
+        raise Exception("Attention, la colonne montant de votre dataframe n\'est actuellement pas reconnue comme une colonne numérique. Relisez bien le cours en faisant notamment attention à l'argument 'decimal' transmis à la fonction pd.read_csv. Vérifiez également dans votre fichier CSV que cette colonne ne contient bien QUE des valeurs numériques (aucune lettre ni autre caractère, etc.)")            
+   
+
+
+# In[9]:
+
 
 # creation de la variable 'solde_avt_ope'
 data = data.sort_values("date_operation")
 amount = data["montant"]
 balance = amount.cumsum()
-balance = list(balance.values)
+balance = balance.values
 last_val = balance[-1]
-balance = [0] + balance[:-1]
+balance = [0] + list(balance)[:-1]
 balance = balance - last_val + LAST_BALANCE
 data["solde_avt_ope"] = balance
 
@@ -128,16 +155,11 @@ data["sens"] = ["credit" if m > 0 else "debit" for m in data["montant"]]
 data["annee"] = data["date_operation"].map(lambda d: d.year)
 data["mois"] = data["date_operation"].map(lambda d: d.month)
 data["jour"] = data["date_operation"].map(lambda d: d.day)
-data["jour_sem"] = data["date_operation"].map(lambda d: d.weekday_name)
+data["jour_sem"] = data["date_operation"].map(lambda d: d.day_name)
 data["jour_sem_num"] = data["date_operation"].map(lambda d: d.weekday()+1)
 data["weekend"] = data["jour_sem"].isin(WEEKEND)
 data["quart_mois"] = [int((jour-1)*4/31)+1 for jour in data["jour"]]
         
 # Enregistrement au format CSV
 data.to_csv("operations_enrichies.csv",index=False)
-
-
-# In[ ]:
-
-
 
